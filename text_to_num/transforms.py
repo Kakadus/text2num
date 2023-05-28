@@ -205,6 +205,7 @@ def _alpha2digit_agg(
         combined_num_result = None
         current_token_ordinal_org = None
         reset_to_last_if_failed = False
+        next_is_decimal_num = False
         token_index = 0
 
         while token_index < len(tokens):
@@ -237,6 +238,15 @@ def _alpha2digit_agg(
                     sentence[len(sentence)-1] = str(tmp_token_ordinal_org)
                     token_to_add = " ".join(sentence)
                     token_to_add_is_num = False
+                elif next_is_decimal_num:
+                    token_to_add = str(combined_num_result)
+                    token_to_add_is_num = True
+                if next_is_decimal_num and num_result in language.MULTIPLIERS.values():
+                    # keep decimal multiplier
+                    token_to_add = t
+                    token_to_add_is_num = False
+                    next_is_decimal_num = False
+
             except ValueError:
                 # This will happen if look-ahead was required (e.g. because of AND) but failed:
                 if reset_to_last_if_failed:
@@ -258,12 +268,24 @@ def _alpha2digit_agg(
                         # finish LAST group but keep token_index
                         token_to_add = str(combined_num_result)
                         token_to_add_is_num = True
+                elif (
+                    t.lower() in language.DECIMAL_SEP
+                    and 0 < token_index < len(tokens) - 1
+                ):
+                    next_is_decimal_num = True
+                    token_index += 1
+                    token_to_add = t
+                    token_to_add_is_num = False
                 else:
                     # previous text was not a valid number
                     # prep. for next group
                     token_index += 1
                     token_to_add = t
                     token_to_add_is_num = False
+
+                    #  exit decimal group
+                    if next_is_decimal_num:
+                        next_is_decimal_num = False
             # new grouped tokens? then add and prep. next
             if token_to_add:
                 if token_to_add_is_num and revert_if_alone(len(sentence)-1, sentence):

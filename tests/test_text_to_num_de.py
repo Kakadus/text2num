@@ -297,3 +297,9 @@ class TestTextToNumDE(TestCase):
         source = "FÜNFZEHN EINS ZEHN EINS"
         expected = "15 1 10 1"
         self.assertEqual(alpha2digit(source, "de"), expected)
+
+
+    def test_decimal_with_multiplier(self):
+        source = "Drei Komma eins vier Millionen Euro"
+        expected = "3,14 Millionen Euro"
+        self.assertEqual(alpha2digit(source, "de"), expected)
